@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Warehouse Management ERP</title>
+<style>
+:root{
+  --bg:#111315;--card:#1c1f22;--line:#363a3e;--txt:#eef0f2;--mut:#a1a7ad;
+  --acc:#d2d6d9;--acc-soft:#303438;--acc-line:#555b60;
+  --grn:#16a34a;--grn-soft:#ecfdf5;--grn-line:#a7f3d0;
+  --red:#dc2626;--red-soft:#fef2f2;--red-line:#fecaca;
+  --amb:#d97706;--amb-soft:#fffbeb;--amb-line:#fde68a;
+  --sky:#65b9dc;--sky-soft:#172b32;
+  --r:8px;--sh:0 2px 12px rgba(0,0,0,.2);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--txt);font-size:14.5px;line-height:1.45}
+body.locked{overflow:hidden}
+button{font-family:inherit}
+.app{display:flex;min-height:100vh}
+
+/* ---------- Sidebar ---------- */
+.sidebar{width:232px;background:#0f172a;color:#cbd2e0;position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:40;transition:transform .25s}
+.brand{padding:18px 20px;display:flex;gap:11px;align-items:center;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:grid;place-items:center;color:#fff;flex-shrink:0}
+.brand b{color:#fff;font-size:15px;display:block;line-height:1.2}
+.brand small{color:#667085;font-size:11px}
+.nav{padding:10px;display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+.nav-item{display:flex;gap:11px;align-items:center;padding:9.5px 12px;border-radius:9px;color:#98a2b3;cursor:pointer;border:0;background:none;font-size:14px;font-weight:500;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:var(--acc);color:#fff}
+.side-note{padding:14px 18px;font-size:11.5px;color:#667085;border-top:1px solid rgba(255,255,255,.07)}
+.backdrop{display:none}
+
+/* ---------- Main ---------- */
+.main{flex:1;margin-left:232px;padding:22px 26px 70px;min-width:0}
+.topbar{display:none}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:none}
+  .main{margin-left:0;padding:16px 14px 80px}
+  .topbar{display:flex;position:sticky;top:0;z-index:30;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 16px;align-items:center;gap:12px;margin:-16px -14px 16px}
+  .topbar h2{font-size:16px;flex:1}
+  .backdrop{display:block;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:35;opacity:0;pointer-events:none;transition:.2s}
+  .backdrop.show{opacity:1;pointer-events:auto}
+}
+@media(max-width:480px){.hn{display:none}}
+
+/* ---------- Buttons / inputs / chips ---------- */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{background:#f8fafc;border-color:#c9d2e0}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.primary:hover{background:#4338ca;border-color:#4338ca}
+.btn.danger{color:var(--red);border-color:var(--red-line);background:#fff}
+.btn.danger:hover{background:var(--red-soft)}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:8px}
+.ibtn{border:0;background:none;color:var(--mut);cursor:pointer;padding:5px;border-radius:7px;display:inline-flex}
+.ibtn:hover{background:#f1f4f9;color:var(--txt)}
+.ibtn.danger:hover{background:var(--red-soft);color:var(--red)}
+.input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:14px;background:#fff;color:var(--txt)}
+.input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin-bottom:5px}
+.frow{display:flex;gap:12px}.frow .field{flex:1}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer}
+.chip:hover{border-color:#c9d2e0}
+.chip.on{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc)}
+.chip .cnt{opacity:.6;font-weight:500;margin-left:2px}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.seg button{flex:1;min-width:86px;padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:#fff;font-size:13.5px;font-weight:600;color:var(--mut);cursor:pointer}
+.seg button:hover{border-color:#c9d2e0}
+.seg button.on{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc)}
+.seg.mini{margin:0}
+.seg.mini button{min-width:0;padding:7px 14px}
+.search-box{position:relative;flex:1;min-width:170px;max-width:300px}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
+.search-box .input{padding-left:34px}
+
+/* ---------- Layout pieces ---------- */
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.page-head h1{font-size:20px;font-weight:800;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:13px;margin-top:3px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.date-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.date-label{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;padding:8px 15px;background:#fff;border:1px solid var(--line);border-radius:9px;cursor:pointer;color:var(--txt)}
+.date-label:hover{border-color:var(--acc);color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.list{overflow:hidden}
+.row-item{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);background:#fff}
+.row-item:last-child{border-bottom:0}
+.clickable{cursor:pointer}
+.clickable:hover{background:#fafbff}
+.row-item.inactive{opacity:.55}
+.grow{flex:1;min-width:0}
+.r-name{font-weight:600}
+.r-sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.r-amt{font-weight:700;white-space:nowrap}
+.chev{color:#b9c2cf;display:inline-flex}
+.hint{color:var(--mut);font-size:12.5px;margin-top:10px}
+.mut{color:var(--mut)}
+
+/* ---------- Tables ---------- */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;min-width:540px}
+.wk{min-width:600px}
+.tbl th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);text-align:left;padding:10px 16px;background:#f8fafc;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover{background:#fafbff}
+tr[data-action]{cursor:pointer}
+.c-name{font-weight:600}
+.num{text-align:right}th.num{text-align:right}
+.rowact{text-align:right;white-space:nowrap}
+@media(max-width:720px){.tbl:not(.wk){min-width:0}.hn-md{display:none}}
+.qty-cell .input{width:92px;text-align:right}
+.sel-sm{width:auto}
+@media(max-width:720px){.qty-cell .input{width:74px}}
+
+/* ---------- Badges & quick buttons ---------- */
+.badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.badge.g{background:var(--grn-soft);color:var(--grn)}
+.badge.r{background:var(--red-soft);color:var(--red)}
+.badge.a{background:var(--amb-soft);color:var(--amb)}
+.badge.s{background:var(--sky-soft);color:var(--sky)}
+.badge.n{background:#eef1f6;color:var(--mut)}
+.qg{display:flex;gap:6px}
+.qbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:800;color:var(--mut);cursor:pointer}
+.qbtn:hover{border-color:#c9d2e0;color:var(--txt)}
+.qbtn.on.g{background:var(--grn-soft);border-color:var(--grn-line);color:var(--grn)}
+.qbtn.on.r{background:var(--red-soft);border-color:var(--red-line);color:var(--red)}
+.qbtn.on.a{background:var(--amb-soft);border-color:var(--amb-line);color:var(--amb)}
+
+/* ---------- Week view ---------- */
+.wk th.wc-h,.wk td.wc{text-align:center}
+td.wc{font-weight:800;cursor:pointer;width:46px}
+td.wc:hover{background:var(--acc-soft)}
+th.wc-h.today{color:var(--acc);box-shadow:inset 0 -2px 0 var(--acc)}
+.c-p{color:var(--grn)}.c-r{color:var(--red)}.c-a{color:var(--amb)}.c-s{color:var(--sky)}
+.dot{color:#c3cbd8}
+
+/* ---------- Dashboard ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-top:16px}
+.stat{padding:16px 18px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:.15s}
+.stat:hover{border-color:var(--acc-line);transform:translateY(-1px)}
+.s-l{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.s-v{font-size:21px;font-weight:800}
+.qa-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.setup{padding:18px 20px;margin-top:16px}
+.setup h3{font-size:15px}
+.setup p{color:var(--mut);font-size:13px;margin:4px 0 14px}
+.setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px}
+.setup-item{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:600;font-size:13.5px}
+.setup-item.done{background:#f8fafc;border-style:dashed;color:var(--mut)}
+.si-ic{width:22px;height:22px;border-radius:99px;display:grid;place-items:center;flex-shrink:0;background:var(--acc-soft);color:var(--acc)}
+.setup-item.done .si-ic{background:var(--grn-soft);color:var(--grn)}
+.si-l{flex:1}
+
+/* ---------- Empty states / totals ---------- */
+.empty{padding:52px 24px;text-align:center}
+.eicon{width:52px;height:52px;border-radius:14px;background:var(--acc-soft);color:var(--acc);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+.empty h3{font-size:16px;margin-bottom:6px}
+.empty p{color:var(--mut);font-size:13.5px;max-width:400px;margin:0 auto 16px}
+.totals{display:flex;gap:26px;justify-content:flex-end;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.totals div{display:flex;gap:10px;align-items:baseline}
+.totals span{color:var(--mut);font-size:13px}
+.txr{color:var(--red)}
+.total-bar{display:flex;justify-content:space-between;align-items:center;padding:13px 18px;margin-top:12px;background:#0f172a;color:#fff;border-radius:var(--r);font-weight:600}
+.backlink{background:none;border:0;color:var(--acc);font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:6px;padding:0}
+.danger-zone{margin-top:18px;display:flex;align-items:center;gap:12px;color:var(--mut);font-size:12.5px;flex-wrap:wrap}
+
+/* ---------- Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.34);display:flex;align-items:center;justify-content:center;padding:16px;z-index:60;opacity:0;transition:.2s}
+#modal-root.open .overlay{opacity:1}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:460px;max-height:90vh;overflow:auto;transform:translateY(14px);transition:.2s;box-shadow:0 20px 50px rgba(2,6,23,.25)}
+#modal-root.open .modal{transform:none}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;border-bottom:1px solid var(--line)}
+.modal-head h3{font-size:15.5px}
+.xbtn{border:0;background:none;color:var(--mut);cursor:pointer;padding:6px;border-radius:8px;display:inline-flex}
+.xbtn:hover{background:#f1f4f9;color:var(--txt)}
+.modal-body{padding:20px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.m-sub{color:var(--mut);font-size:13px;margin:-4px 0 14px}
+.cf-msg{color:var(--txt);font-size:14px}
+.m-hist{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+.m-hist h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:8px}
+.h-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f4f9;font-size:13px}
+.h-row:last-child{border-bottom:0}
+.h-row b{margin-left:auto}
+.h-act{display:flex;gap:2px}
+.mut-c{color:var(--mut);padding:8px 0 2px}
+@media(max-width:640px){
+  .overlay{align-items:flex-end;padding:0}
+  .modal{max-width:100%;border-radius:18px 18px 0 0;max-height:94vh}
+}
+
+/* ---------- Toast ---------- */
+#toast-root{position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);background:#111827;color:#fff;padding:10px 18px;border-radius:99px;font-weight:600;font-size:13.5px;opacity:0;transition:.25s;z-index:80;pointer-events:none;box-shadow:0 10px 30px rgba(2,6,23,.3)}
+#toast-root.show{opacity:1;transform:translate(-50%,0)}
+#auth-root{position:fixed;inset:0;z-index:100}
+#auth-root:empty{display:none}
+.auth-screen{min-height:100%;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 70% 15%,#34383d 0,transparent 40%),#151719;color:#f4f5f6}
+.auth-panel{width:min(100%,420px);padding:34px;background:#202326;border:1px solid #383c40;border-radius:12px;box-shadow:0 24px 80px #0008}
+.auth-panel .auth-logo{margin-bottom:20px;background:#454b50}
+.auth-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:#aeb4b9}
+.auth-panel h1{font-size:26px;margin:8px 0 5px}
+.auth-panel .sub{color:#b1b7bc;margin-bottom:24px}
+.auth-panel .field{margin-bottom:14px}
+.auth-panel .field span{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#c1c6ca}
+.auth-panel .input{background:#17191b;border-color:#464b50;color:#f4f5f6}
+.auth-panel .input:focus{border-color:#aeb4b9;box-shadow:0 0 0 3px #929ba322}
+.auth-panel .btn.primary{background:#e0e3e5;color:#191b1d;border-color:#e0e3e5}
+.auth-submit{width:100%;justify-content:center;margin-top:5px}
+.auth-error{min-height:18px;color:#ff9e98;font-size:13px}
+.auth-note{font-size:11.5px;color:#92999f;margin-top:18px}
+body:not(.locked) .sidebar{background:#191b1d;border-color:#303438}
+body:not(.locked) .brand{border-color:#303438}
+body:not(.locked) .logo{background:#44494e}
+body:not(.locked) .nav-item{color:#aeb4b9}
+body:not(.locked) .nav-item.active{background:#d2d6d9;color:#17191b}
+body:not(.locked) .nav-item:hover:not(.active){background:#292d30;color:#fff}
+body:not(.locked) .card,body:not(.locked) .row-item,body:not(.locked) .btn,
+body:not(.locked) .input,body:not(.locked) .chip,body:not(.locked) .seg button,
+body:not(.locked) .date-label{background:#1c1f22;color:var(--txt);border-color:var(--line)}
+body:not(.locked) .tbl th{background:#25292c;color:#b7bdc2}
+body:not(.locked) .row-item:hover,body:not(.locked) .clickable:hover,body:not(.locked) .tbl tbody tr:hover,
+body:not(.locked) .ibtn:hover{background:#272b2e}
+body:not(.locked) .btn.primary{background:#d2d6d9;border-color:#d2d6d9;color:#17191b}
+body:not(.locked) .btn.primary:hover{background:#f0f1f2}
+body:not(.locked) .chip.on,body:not(.locked) .seg button.on{background:#373c40;color:#f5f6f7;border-color:#656b70}
+body:not(.locked) .total-bar{background:#d2d6d9;color:#17191b}
+body:not(.locked) .topbar{background:rgba(26,29,31,.95);border-color:var(--line)}
+body:not(.locked) .modal{background:#1c1f22;color:var(--txt)}
+body:not(.locked) .modal-head{border-color:var(--line)}
+body:not(.locked) .modal .input{background:#151719;color:var(--txt);border-color:#454a4e}
+body:not(.locked) .setup-item{border-color:var(--line)}
+.side-tools{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);display:grid;gap:10px}
+.side-tools select{width:100%;padding:8px;border:1px solid #41464a;border-radius:7px;background:#202326;color:#edf0f2;font:inherit}
+.session-user{font-size:12px;color:#d0d4d7}.session-user small{display:block;color:#8e959a;margin-top:2px}
+.side-tools .btn{width:100%;justify-content:center;background:#24272a;border-color:#41464a;color:#e5e8ea}
+body[dir="rtl"] .sidebar{left:auto;right:0}
+body[dir="rtl"] .main{margin-left:0;margin-right:232px}
+body[dir="rtl"] .search-box svg{left:auto;right:11px}
+body[dir="rtl"] .search-box .input{padding-left:12px;padding-right:34px}
+@media(max-width:900px){body[dir="rtl"] .sidebar{transform:translateX(100%)}body[dir="rtl"] .sidebar.open{transform:none}body[dir="rtl"] .main{margin-right:0}}
+.report-section{margin-top:20px}.report-section h2{font-size:15px;margin:0 0 8px}.report-heading{display:none}
+.permission-list{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.permission-list legend{padding:0 5px;font-size:12px;font-weight:700;color:var(--mut)}
+.permission-list label{display:flex;gap:8px;align-items:center;font-size:13px}
+.permission-list input{accent-color:#cbd0d4}
+/* A modal locks the page, so body:not(.locked) theme rules no longer apply here. */
+.modal{background:#fff!important;color:#17191b!important}
+.modal-head h3,.modal .field label,.modal .m-sub,.modal .cf-msg,.modal .permission-list legend,.modal .permission-list label{color:#20252a!important}
+.modal .input{background:#fff!important;color:#111!important;border-color:#747d85!important}
+.modal .input::placeholder{color:#505860!important;opacity:1}
+.modal .btn.primary{background:#252a2e!important;border-color:#252a2e!important;color:#fff!important}
+.modal .btn:not(.primary):not(.danger){background:#f1f3f5!important;color:#20252a!important;border-color:#aeb5bb!important}
+.modal .xbtn{color:#454b50!important}
+/* Keep typed text readable in every form, including the dark workspace theme. */
+body:not(.locked) .input{background:#fff!important;color:#111!important;border-color:#8a9299!important}
+body:not(.locked) .input::placeholder{color:#505860!important;opacity:1}
+body:not(.locked) .field label,body:not(.locked) .modal-head h3,body:not(.locked) h1,body:not(.locked) h2,body:not(.locked) h3,body:not(.locked) .tbl th{font-weight:800}
+@media print{
+  body{background:#fff!important;color:#111!important;font-size:11px}
+  .sidebar,.topbar,.report-tools,.hint,#toast-root{display:none!important}
+  .main{margin:0!important;padding:0!important}
+  .report-heading{display:block!important;margin:0 0 12px}
+  .report-heading h1{font-size:19px}.report-heading p{margin-top:3px}
+  .report-section{break-inside:avoid;margin:14px 0}
+  .report-section h2{font-size:13px}
+  .card,.tbl th,.tbl td{background:#fff!important;color:#111!important;box-shadow:none!important}
+  .card{border:1px solid #bbb!important}.tbl th,.tbl td{border-color:#ccc!important;padding:5px 7px!important}
+  .tbl th{font-size:9px!important}.report-stats{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="logo" id="brand-ic"></span>
+      <span><b>Warehouse Manager</b><small>Daily Operations</small></span>
+    </div>
+    <nav class="nav" id="side-nav"></nav>
+    <div class="side-tools" id="side-tools"></div>
+  </aside>
+  <div class="backdrop" id="backdrop" data-action="close-side"></div>
+  <main class="main">
+    <div class="topbar">
+      <button class="ibtn" data-action="toggle-side" id="hb"></button>
+      <h2 id="pg-title">Dashboard</h2>
+    </div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<div id="auth-root"></div>
+<input type="date" id="date-input" style="position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0">
+
+<script>
+/* =====================================================================
+  Local-first warehouse operations. Records and accounts are stored in
+  this browser; connect a server API for shared or cross-device access.
+  ===================================================================== */
+
+/* ---------- utilities ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MON_S=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const dstr=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const parseD=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const todayStr=()=>dstr(new Date());
+const addDays=(s,n)=>{const d=parseD(s);d.setDate(d.getDate()+n);return dstr(d)};
+const fmtLong=s=>{const d=parseD(s);return DOW[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()};
+const fmtShort=s=>{const d=parseD(s);return String(d.getDate()).padStart(2,'0')+' '+MON_S[d.getMonth()]+' '+d.getFullYear()};
+const fmtDay=s=>{const d=parseD(s);return String(d.getDate()).padStart(2,'0')+' '+MON_S[d.getMonth()]};
+const fmtMoney=n=>'PKR '+(+n||0).toLocaleString('en-US');
+const fmtNum=n=>(+n||0).toLocaleString('en-US');
+const fmtTime=t=>{if(!t)return '—';let[h,m]=t.split(':').map(Number);const ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+String(m).padStart(2,'0')+' '+ap};
+
+/* ---------- icons (inline SVG) ---------- */
+const ic=(p,s=18)=>'<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
+const I={
+  home:ic('<path d="M3 9.5 12 3l9 6.5V20a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20Z"/><path d="M9 21.5V13h6v8.5"/>'),
+  users:ic('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  layers:ic('<path d="m12 2 10 5-10 5L2 7Z"/><path d="m2 12 10 5 10-5"/><path d="m2 17 10 5 10-5"/>'),
+  box:ic('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+  cart:ic('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'),
+  truck:ic('<path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+  wallet:ic('<rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/>'),
+  db:ic('<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 5v14c0 1.66-4 3-9 3s-9-1.34-9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>'),
+  menu:ic('<path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/>',20),
+  plus:ic('<path d="M12 5v14"/><path d="M5 12h14"/>',16),
+  left:ic('<path d="m15 18-6-6 6-6"/>',16),
+  right:ic('<path d="m9 18 6-6-6-6"/>',16),
+  chev:ic('<path d="m9 18 6-6-6-6"/>',16),
+  search:ic('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',15),
+  edit:ic('<path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',15),
+  trash:ic('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',15),
+  x:ic('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',18),
+  cal:ic('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',15),
+  check:ic('<path d="M20 6 9 17l-5-5"/>',14),
+  power:ic('<path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/>',15)
+};
+
+/* ---------- state ---------- */
+const LS='wh_phase1_v1';
+const blank=()=>({workers:[],customers:[],suppliers:[],products:[],expenseCats:[],users:[],
+  attendance:[],production:[],stock:[],sales:[],purchases:[],expenses:[]});
+let DB;
+try{DB=JSON.parse(localStorage.getItem(LS))||blank()}catch(_){DB=blank()}
+for(const k in blank()) if(!(k in DB)) DB[k]=[];           // forward-compat
+const API_MODE=location.protocol==='https:'||location.protocol==='http:';
+const LOCAL_BACKUP_KEY=LS+'_legacy_backup';
+let LOCAL_BACKUP;
+try{LOCAL_BACKUP=JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY))||JSON.parse(JSON.stringify(DB))}catch(_){LOCAL_BACKUP=JSON.parse(JSON.stringify(DB))}
+if(!localStorage.getItem(LOCAL_BACKUP_KEY)&&Object.keys(LOCAL_BACKUP).some(key=>key!=='users'&&Array.isArray(LOCAL_BACKUP[key])&&LOCAL_BACKUP[key].length))
+  localStorage.setItem(LOCAL_BACKUP_KEY,JSON.stringify(LOCAL_BACKUP));
+let CLOUD_REVISION=0,CLOUD_ADMIN_EXISTS=false,CLOUD_LOADING=false,CLOUD_CONFLICT=false,CLOUD_MESSAGE='',CLOUD_QUEUE=Promise.resolve();
+async function apiRequest(path,options={}){
+  const response=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
+  const result=response.status===204?null:await response.json().catch(()=>({}));
+  if(!response.ok){const error=new Error(result.error||'Shared server is unavailable.');error.status=response.status;throw error}
+  return result;
+}
+function applyCloudSnapshot(snapshot){
+  CLOUD_LOADING=true;CLOUD_REVISION=snapshot.revision;DB={...blank(),...snapshot.payload};
+  for(const key of Object.keys(blank()))if(!Array.isArray(DB[key]))DB[key]=[];
+  DB.dashboard=snapshot.payload.dashboard||null;DB.users=snapshot.payload.users||[];
+  localStorage.setItem(LS,JSON.stringify(DB));CLOUD_LOADING=false;
+}
+const legacyHasRecords=()=>Object.keys(LOCAL_BACKUP).some(key=>key!=='users'&&Array.isArray(LOCAL_BACKUP[key])&&LOCAL_BACKUP[key].length);
+async function recoverBrowserRecords(snapshot){
+  if(!SESSION||SESSION.role!=='admin'||!legacyHasRecords()||localStorage.getItem(LS+'_legacy_migrated'))return snapshot;
+  if(!confirm('This browser has saved records that are not in the shared account. Import any missing records? Existing shared records will be kept.'))return snapshot;
+  const result=await apiRequest('/api/state/merge-import',{method:'POST',body:JSON.stringify({revision:snapshot.revision,payload:LOCAL_BACKUP})});
+  localStorage.setItem(LS+'_legacy_migrated','yes');
+  return await apiRequest('/api/state');
+}
+function save(){
+  localStorage.setItem(LS,JSON.stringify(DB));
+  if(!API_MODE||!SESSION||CLOUD_LOADING||CLOUD_CONFLICT)return Promise.resolve();
+  const payload=JSON.parse(JSON.stringify(DB));delete payload.users;delete payload.dashboard;
+  CLOUD_QUEUE=CLOUD_QUEUE.then(async()=>{
+    if(CLOUD_CONFLICT)return;
+    const result=await apiRequest('/api/state',{method:'PUT',body:JSON.stringify({revision:CLOUD_REVISION,payload})});
+    CLOUD_REVISION=result.revision;
+  }).catch(error=>{
+    if(error.status===409)CLOUD_CONFLICT=true;
+    toast(error.status===409?'Data changed on another device. Reload before continuing.':error.message);
+  });
+  return CLOUD_QUEUE;
+}
+async function refreshCloudState(){
+  if(!API_MODE||!SESSION||CLOUD_CONFLICT||$('#modal-root').innerHTML||document.activeElement?.matches('input,select,textarea'))return;
+  await CLOUD_QUEUE;
+  const snapshot=await apiRequest('/api/state');
+  if(snapshot.revision>CLOUD_REVISION){applyCloudSnapshot(snapshot);render()}
+}
+function startCloudPolling(){
+  clearInterval(window.CLOUD_TIMER);
+  window.CLOUD_TIMER=setInterval(()=>refreshCloudState().catch(error=>toast(error.message)),5000);
+}
+async function initializeCloud(){
+  try{
+    const status=await apiRequest('/api/status');CLOUD_ADMIN_EXISTS=status.adminExists;
+    try{
+      const session=await apiRequest('/api/session');SESSION=session.user;
+      let snapshot=await apiRequest('/api/state');snapshot=await recoverBrowserRecords(snapshot);
+      applyCloudSnapshot(snapshot);render();startCloudPolling();
+    }catch(error){if(error.status!==401)throw error;showAuth()}
+  }catch(error){CLOUD_MESSAGE='Cannot reach the shared server. Check its URL and deployment.';showAuth()}
+}
+let SESSION=null;
+const AUTH_KEY='wh_phase1_session';
+const passwordHash=async value=>{
+  if(!crypto.subtle)throw new Error('Secure password hashing is unavailable in this browser context.');
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
+};
+function restoreSession(){
+  if(API_MODE)return;
+  const id=sessionStorage.getItem(AUTH_KEY),user=DB.users.find(x=>x.id===id&&x.active);
+  SESSION=user||null;
+  if(!user)sessionStorage.removeItem(AUTH_KEY);
+}
+function showAuth(){
+  document.body.classList.add('locked');
+  const setup=API_MODE?!CLOUD_ADMIN_EXISTS:!DB.users.some(x=>x.role==='admin');
+  $('#auth-root').innerHTML='<div class="auth-screen"><form class="auth-panel" id="auth-form">'+
+    '<span class="logo auth-logo">'+I.box+'</span><p class="auth-kicker">WAREHOUSE MANAGEMENT</p>'+ 
+    '<h1>'+(setup?'Create administrator':'Sign in')+'</h1><p class="sub">'+(setup?'Set up the first admin account to protect this workspace.':'Use your assigned account to continue.')+'</p>'+ 
+    (setup?'<label class="field"><span>Full name</span><input class="input" name="name" required autocomplete="name"></label>':'')+
+    (setup?'':'<label class="field"><span>Sign in as</span><select class="input" name="role" required><option value="admin">Admin</option><option value="caretaker">Caretaker</option></select></label>')+
+    '<label class="field"><span>Username</span><input class="input" name="username" required autocomplete="username"></label>'+ 
+    '<label class="field"><span>Password</span><input class="input" name="password" type="password" minlength="8" required autocomplete="'+(setup?'new-password':'current-password')+'"></label>'+ 
+    (setup?'<label class="field"><span>Confirm password</span><input class="input" name="confirm" type="password" minlength="8" required autocomplete="new-password"></label>':'')+
+    '<p class="auth-error" id="auth-error" role="alert">'+esc(CLOUD_MESSAGE)+'</p><button class="btn primary auth-submit" type="submit">'+(setup?'Create admin account':'Sign in')+'</button>'+ 
+    '<p class="auth-note">'+(API_MODE?'Accounts and ERP records are saved to the shared server.':'Accounts and ERP records are stored in this browser.')+'</p></form></div>';
+  $('#auth-form').addEventListener('submit',async e=>{
+    e.preventDefault();const form=e.currentTarget,data=new FormData(form),username=String(data.get('username')).trim().toLowerCase(),password=String(data.get('password'));
+    const role=String(data.get('role')||'admin');
+    const error=$('#auth-error'),submit=form.querySelector('[type="submit"]');submit.disabled=true;error.textContent='';
+    try{
+      if(API_MODE){
+        if(setup&&password!==data.get('confirm'))throw new Error('Passwords do not match.');
+        const result=await apiRequest(setup?'/api/setup':'/api/login',{method:'POST',body:JSON.stringify({name:String(data.get('name')||'').trim(),username,password,role})});
+        SESSION=result.user;CLOUD_ADMIN_EXISTS=true;
+        let snapshot=await apiRequest('/api/state');snapshot=await recoverBrowserRecords(snapshot);
+        applyCloudSnapshot(snapshot);CLOUD_MESSAGE='';startSession(SESSION);startCloudPolling();return;
+      }
+      if(setup){
+        const name=String(data.get('name')).trim();
+        if(password!==data.get('confirm'))throw new Error('Passwords do not match.');
+        if(password.length<8)throw new Error('Use at least 8 characters for the password.');
+        if(!name||!username)throw new Error('Enter a name and username.');
+        const user={id:uid(),name,username,role:'admin',passwordHash:await passwordHash(password),active:true,permissions:['dashboard','attendance','production','inventory','sales','purchases','expenses','masters','reports','access']};
+        DB.users.push(user);save();startSession(user);
+      }else{
+        const user=DB.users.find(x=>x.username===username&&x.active&&x.role===role);
+        if(!user||user.passwordHash!==await passwordHash(password))throw new Error('Username or password is incorrect.');
+        startSession(user);
+      }
+    }catch(err){error.textContent=err.message||'Unable to sign in.';submit.disabled=false}
+  });
+}
+function startSession(user){SESSION=user;if(!API_MODE)sessionStorage.setItem(AUTH_KEY,user.id);document.body.classList.remove('locked');$('#auth-root').innerHTML='';render()}
+function canOpen(view){return !!SESSION&&(SESSION.role==='admin'||SESSION.permissions.includes(view))}
+const WORDS={
+  roman:{Dashboard:'Khaaka',Attendance:'Hazri',Production:'Paidawar',Inventory:'Maal',Sales:'Farokht',Purchases:'Khareed',Expenses:'Akhrajaat','Master Data':'Asal Fehrist',Reports:'Reports','Admin & Access':'Admin aur Access',Workers:'Workers',Customers:'Customers',Suppliers:'Suppliers',Products:'Products',Categories:'Categories',Present:'Hazir',Absent:'Ghair hazir',Leave:'Chhutti','Half Day':'Aadha din',Day:'Din',Week:'Hafta',Month:'Mahina',Today:'Aaj',Prev:'Pichla',Next:'Agla',Search:'Talash',Save:'Mehfooz karein',Remove:'Hataein',Edit:'Tabdeel karein',Add:'Shamil karein',Name:'Naam',Status:'Haalat',Date:'Tareekh',Quantity:'Miqdar',Rate:'Rate',Total:'Kul',Paid:'Ada shuda',Balance:'Baqaya',Product:'Product',Worker:'Worker',Customer:'Customer',Supplier:'Supplier',Expense:'Akhrajat',Cancel:'Mansookh',Confirm:'Tasdeeq',Active:'Chalu',Inactive:'Band',Language:'Zaban','Mark Attendance':'Hazri lagayen','Mark All Present':'Sab hazir lagayen','Add Expense':'Akhrajat shamil karein','New Sale':'Nayi farokht','New Purchase':'Nayi khareed','Getting started':'Shuru karein','Create administrator':'Admin account banayein','Sign in':'Login','Full name':'Poora naam','Confirm password':'Password dobara','Create admin account':'Admin account banayein','Period Receipts & Reports':'Muddat ki receipts aur reports','Print / Save PDF':'Print / PDF save karein','Weekly':'Haftawar','Monthly':'Mahawari','Attendance entries':'Hazri ki entries','Sales receipts':'Farokht receipts','Purchase receipts':'Khareed receipts','Expense receipts':'Akhrajat receipts','No records for this period.':'Is muddat mein koi record nahi.','Arrival':'Aane ka waqt','Departure':'Jane ka waqt','OT Hours':'OT ke ghantay','Notes':'Notes','Allowed sections':'Ijazat walay sections','Add Caretaker':'Caretaker shamil karein','Save access':'Access mehfooz karein','Sign out':'Logout'},
+  ur:{Dashboard:'ڈیش بورڈ',Attendance:'حاضری',Production:'پیداوار',Inventory:'اسٹاک',Sales:'فروخت',Purchases:'خریداری',Expenses:'اخراجات','Master Data':'بنیادی فہرست',Reports:'رپورٹس','Admin & Access':'ایڈمن اور رسائی',Workers:'مزدور',Customers:'گاہک',Suppliers:'سپلائرز',Products:'مصنوعات',Categories:'اقسام',Present:'حاضر',Absent:'غیر حاضر',Leave:'چھٹی','Half Day':'آدھا دن',Day:'دن',Week:'ہفتہ',Month:'مہینہ',Today:'آج',Prev:'پچھلا',Next:'اگلا',Search:'تلاش',Save:'محفوظ کریں',Remove:'ہٹائیں',Edit:'ترمیم',Add:'شامل کریں',Name:'نام',Status:'حالت',Date:'تاریخ',Quantity:'مقدار',Rate:'قیمت',Total:'کل',Paid:'ادا شدہ',Balance:'بقایا',Product:'مصنوعہ',Worker:'مزدور',Customer:'گاہک',Supplier:'سپلائر',Expense:'اخراجات',Cancel:'منسوخ',Confirm:'تصدیق',Active:'فعال',Inactive:'غیر فعال',Language:'زبان','Mark Attendance':'حاضری لگائیں','Mark All Present':'سب کو حاضر لگائیں','Add Expense':'اخراجات شامل کریں','New Sale':'نئی فروخت','New Purchase':'نئی خریداری','Getting started':'آغاز کریں','Create administrator':'ایڈمن اکاؤنٹ بنائیں','Sign in':'لاگ ان','Full name':'پورا نام','Confirm password':'پاس ورڈ دوبارہ درج کریں','Create admin account':'ایڈمن اکاؤنٹ بنائیں','Period Receipts & Reports':'مدت کی رسیدیں اور رپورٹس','Print / Save PDF':'پرنٹ / PDF محفوظ کریں','Weekly':'ہفتہ وار','Monthly':'ماہانہ','Attendance entries':'حاضری کے اندراجات','Sales receipts':'فروخت کی رسیدیں','Purchase receipts':'خریداری کی رسیدیں','Expense receipts':'اخراجات کی رسیدیں','No records for this period.':'اس مدت کا کوئی ریکارڈ نہیں۔','Arrival':'آمد کا وقت','Departure':'روانگی کا وقت','OT Hours':'اوور ٹائم گھنٹے','Notes':'نوٹس','Allowed sections':'اجازت یافتہ حصے','Add Caretaker':'نگران شامل کریں','Save access':'رسائی محفوظ کریں','Sign out':'لاگ آؤٹ'}
+};
+function translatePage(){
+  const dict=WORDS[UI.language]||{},roots=[$('#view'),$('#side-nav'),$('#pg-title'),$('#side-tools'),$('#modal-root')];
+  document.documentElement.lang=UI.language==='ur'?'ur':'en';document.documentElement.dir=UI.language==='ur'?'rtl':'ltr';
+  document.body.dir=document.documentElement.dir;
+  const words=Object.fromEntries(Object.entries(dict).filter(([key])=>!key.includes(' ')).map(([key,value])=>[key.toLowerCase(),value]));
+  const convert=text=>{
+    let result=text;
+    for(const [phrase,value] of Object.entries(dict).filter(([key])=>key.includes(' ')).sort((a,b)=>b[0].length-a[0].length))
+      result=result.replace(new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),value);
+    return result.replace(/[A-Za-z][A-Za-z'-]*/g,word=>words[word.toLowerCase()]||word);
+  };
+  for(const root of roots){if(!root)continue;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;
+    root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(el=>['placeholder','title','aria-label'].forEach(attr=>{
+      if(el.hasAttribute(attr))el.setAttribute(attr,convert(el.getAttribute(attr)));
+    }));
+    while((node=walker.nextNode())){
+      if(node.parentElement.closest('.r-name,.c-name,option,input,textarea,select,[data-user-content]'))continue;
+      const exact=node.nodeValue.trim();if(!exact)continue;
+      node.nodeValue=dict[exact]?node.nodeValue.replace(exact,dict[exact]):convert(node.nodeValue);
+    }
+  }
+}
+
+const UI={view:'dashboard',date:todayStr(),mastersTab:'workers',language:localStorage.getItem(LS+'_language')||'en',reportMode:'week',
+  attMode:'day',attFilter:'all',attSearch:'',
+  saleFilter:'all',purchFilter:'all',stockFilter:'all',
+  salesSel:null,purchSel:null};
+let MCTX=null,CBR=null;
+
+/* ---------- master config ---------- */
+const MASTER={
+  workers:{title:'Workers',add:'Add Worker',singular:'worker'},
+  customers:{title:'Customers / Parties',add:'Add Customer',singular:'customer'},
+  suppliers:{title:'Suppliers',add:'Add Supplier',singular:'supplier'},
+  products:{title:'Products / Fabrics',add:'Add Product',singular:'product',prod:true},
+  expenseCats:{title:'Expense Categories',add:'Add Category',singular:'category'}
+};
+const HIST={workers:['attendance'],customers:['sales'],suppliers:['purchases'],
+  products:['production','stock','sales','purchases'],expenseCats:['expenses']};
+const HISTKEY={workers:'workerId',customers:'customerId',suppliers:'supplierId',
+  products:'productId',expenseCats:'categoryId'};
+const TXN={
+  sales:{title:'Sales',item:'Sale',party:'customers',partyKey:'customerId',partySingular:'customer',
+    sel:'salesSel',filter:'saleFilter',listId:'sale-list',search:'Search customers...',
+    emptyTitle:'No customers added yet',
+    emptyText:'Add your customers / parties once — they will appear here every day for fast sales entry.',
+    emptyBtn:'Add Customer'},
+  purchases:{title:'Purchases',item:'Purchase',party:'suppliers',partyKey:'supplierId',partySingular:'supplier',
+    sel:'purchSel',filter:'purchFilter',listId:'purch-list',search:'Search suppliers...',
+    emptyTitle:'No suppliers added yet',
+    emptyText:'Add your suppliers once — they will appear here every day for fast purchase entry.',
+    emptyBtn:'Add Supplier'}
+};
+const ATT={present:{l:'P',label:'Present',cls:'g'},absent:{l:'A',label:'Absent',cls:'r'},
+  leave:{l:'L',label:'Leave',cls:'a'},half:{l:'H',label:'Half Day',cls:'s'}};
+const STK={ok:['In Stock','g'],low:['Low Stock','a'],out:['Out of Stock','r']};
+
+/* ---------- data helpers (Phase 2 seam) ---------- */
+const active=l=>DB[l].filter(x=>x.active);
+const byId=(l,id)=>DB[l].find(x=>x.id===id);
+function hasHistory(l,id){const key=HISTKEY[l];return HIST[l].some(t=>DB[t].some(r=>r[key]===id))}
+const attRec=(wid,d)=>DB.attendance.find(a=>a.workerId===wid&&a.date===d);
+function setUpAtt(wid,d,patch){
+  let r=attRec(wid,d);
+  if(!r){r={id:uid(),date:d,workerId:wid,status:'present',arrival:'',departure:'',ot:'',notes:''};DB.attendance.push(r)}
+  Object.assign(r,patch);save();
+}
+const prodRec=(pid,d)=>DB.production.filter(p=>p.productId===pid&&p.date===d);
+function stockOf(pid){
+  let s=0;
+  DB.production.forEach(p=>{if(p.productId===pid)s+=(+p.quantity||0)});
+  DB.purchases.forEach(p=>{if(p.productId===pid)s+=(+p.qty||0)});
+  DB.sales.forEach(p=>{if(p.productId===pid)s-=(+p.qty||0)});
+  DB.stock.forEach(t=>{if(t.productId!==pid)return;
+    if(t.type==='adjust')s=(+t.qty||0);else s+=(t.type==='add'?1:-1)*(+t.qty||0)});
+  return Math.round(s*100)/100;
+}
+function stockStatus(pid){
+  const p=byId('products',pid),s=stockOf(pid),min=+p.minStock||0;
+  if(s<=0)return{s,st:'out'};
+  if(min>0&&s<min)return{s,st:'low'};
+  return{s,st:'ok'};
+}
+
+/* ---------- small UI builders ---------- */
+const chips=(o,cur,act,extra='')=>o.map(([v,l])=>'<button class="chip '+(cur===v?'on':'')+'" data-action="'+act+'" data-v="'+v+'" '+extra+'>'+l+'</button>').join('');
+const searchBox=(ph,rows)=>'<div class="search-box">'+I.search+'<input class="input" placeholder="'+ph+'" data-rows="'+rows+'"></div>';
+const opts=(arr,sel)=>arr.map(x=>'<option value="'+x.id+'" '+(x.id===sel?'selected':'')+'>'+esc(x.name)+'</option>').join('');
+const emptyState=o=>'<div class="card"><div class="empty"><div class="eicon">'+o.icon+'</div><h3>'+o.title+'</h3><p>'+o.text+'</p>'+
+  (o.btn?'<button class="btn primary" data-action="'+o.act+'" data-l="'+o.list+'">'+I.plus+' '+o.btn+'</button>':'')+'</div></div>';
+const statCard=(l,v,view)=>'<button class="card stat" data-action="nav" data-v="'+view+'"><span class="s-l">'+l+'</span><span class="s-v">'+v+'</span></button>';
+const dateNav=()=>'<div class="date-nav">'+
+  '<button class="btn sm" data-action="date-prev">'+I.left+'<span class="hn">Prev</span></button>'+
+  '<button class="btn sm" data-action="date-today">Today</button>'+
+  '<button class="date-label" data-action="date-pick">'+I.cal+' '+fmtShort(UI.date)+'</button>'+
+  '<button class="btn sm" data-action="date-next"><span class="hn">Next</span>'+I.right+'</button></div>';
+
+/* ---------- toast / modal / confirm ---------- */
+let TT;
+function toast(m){const t=$('#toast-root');t.textContent=m;t.classList.add('show');
+  clearTimeout(TT);TT=setTimeout(()=>t.classList.remove('show'),2200)}
+function openModal(title,body){
+  CBR=null;
+  $('#modal-root').innerHTML='<div class="overlay" data-action="overlay-close"><div class="modal">'+
+    '<div class="modal-head"><h3>'+title+'</h3><button class="xbtn" data-action="modal-close">'+I.x+'</button></div>'+
+    '<div class="modal-body">'+body+'</div></div></div>';
+  translatePage();
+  requestAnimationFrame(()=>$('#modal-root').classList.add('open'));
+  document.body.classList.add('locked');
+  setTimeout(()=>{const f=$('#modal-root .modal-body input,#modal-root .modal-body select');if(f)f.focus()},160);
+}
+function closeModal(){$('#modal-root').classList.remove('open');document.body.classList.remove('locked');
+  setTimeout(()=>$('#modal-root').innerHTML='',180)}
+function confirmModal(o){CBR=o.onConfirm;
+  openModal(o.title,'<p class="cf-msg">'+o.message+'</p><div class="modal-actions">'+
+    '<button class="btn" data-action="confirm-cancel">Cancel</button>'+
+    '<button class="btn '+(o.danger===false?'primary':'danger')+'" data-action="confirm-ok">'+(o.confirmText||'Confirm')+'</button></div>');
+}
+
+/* ---------- shell ---------- */
+const NAV=[['dashboard','Dashboard',I.home],['attendance','Attendance',I.users],
+  ['production','Production',I.layers],['inventory','Inventory',I.box],
+  ['sales','Sales',I.cart],['purchases','Purchases',I.truck],
+  ['expenses','Expenses',I.wallet],['masters','Master Data',I.db],['reports','Reports',I.cal],['access','Admin & Access',I.db]];
+const TITLES={dashboard:'Dashboard',attendance:'Attendance',production:'Production',inventory:'Inventory',
+  sales:'Sales',purchases:'Purchases',expenses:'Expenses',masters:'Master Data',reports:'Reports',access:'Admin & Access'};
+function renderShell(){
+  $('#side-nav').innerHTML=NAV.filter(([v])=>canOpen(v)).map(([v,l,i])=>'<button class="nav-item '+(UI.view===v?'active':'')+'" data-action="nav" data-v="'+v+'">'+i+'<span>'+l+'</span></button>').join('');
+  $('#side-tools').innerHTML='<div class="session-user" data-user-content>'+esc(SESSION.name)+'<small>'+(SESSION.role==='admin'?'Administrator':'Caretaker')+'</small></div>'+ 
+    '<label><span class="mut">Language</span><select id="lang-select" aria-label="Language"><option value="en" '+(UI.language==='en'?'selected':'')+'>English</option><option value="roman" '+(UI.language==='roman'?'selected':'')+'>Roman Urdu</option><option value="ur" '+(UI.language==='ur'?'selected':'')+'>اردو</option></select></label>'+ 
+    '<button class="btn sm" data-action="sign-out">Sign out</button>';
+  $('#pg-title').textContent=TITLES[UI.view];
+}
+function render(){
+  if(!SESSION){showAuth();return}
+  if(!canOpen(UI.view))UI.view=(NAV.find(([view])=>canOpen(view))||['dashboard'])[0];
+  renderShell();
+  $('#view').innerHTML={dashboard:viewDashboard,attendance:viewAttendance,production:viewProduction,
+    inventory:viewInventory,sales:()=>viewTxn('sales'),purchases:()=>viewTxn('purchases'),
+    expenses:viewExpenses,masters:viewMasters,reports:viewReports,access:viewAccess}[UI.view]();
+  afterRender();translatePage();
+}
+function afterRender(){if(UI.view==='attendance')applyAtt()}
+function closeSide(){$('#sidebar').classList.remove('open');$('#backdrop').classList.remove('show')}
+
+/* ================= DASHBOARD ================= */
+function viewDashboard(){
+  const d=UI.date;
+  const summary=DB.dashboard?.dates?.[d];
+  const prod=summary?summary.production:DB.production.filter(x=>x.date===d).reduce((t,x)=>t+(+x.quantity||0),0);
+  const sales=summary?summary.sales:DB.sales.filter(x=>x.date===d).reduce((t,x)=>t+x.qty*x.rate,0);
+  const purch=summary?summary.purchases:DB.purchases.filter(x=>x.date===d).reduce((t,x)=>t+x.qty*x.rate,0);
+  const exp=summary?summary.expenses:DB.expenses.filter(x=>x.date===d).reduce((t,x)=>t+(+x.amount||0),0);
+  const present=summary?summary.present:DB.attendance.filter(x=>x.date===d&&x.status==='present').length;
+  const wActive=DB.dashboard?DB.dashboard.activeWorkers:active('workers').length;
+  const setup=[['workers','Add Workers'],['customers','Add Customers'],['suppliers','Add Suppliers'],
+    ['products','Add Products'],['expenseCats','Add Expense Categories']];
+  const pending=setup.filter(([l])=>!DB[l].length);
+  const setupCard=pending.length&&(!API_MODE||canOpen('masters'))?'<div class="card setup"><h3>Getting started</h3>'+ 
+    '<p>Create your master lists once — after that, daily entry takes seconds.</p><div class="setup-grid">'+
+    setup.map(([l,lab])=>{const done=DB[l].length>0;
+      return '<div class="setup-item '+(done?'done':'')+'"><span class="si-ic">'+(done?I.check:I.plus)+'</span>'+
+      '<span class="si-l">'+lab+'</span>'+(done?'<span class="badge g">Done</span>':
+      '<button class="btn sm" data-action="goto-master" data-v="'+l+'">Add</button>')+'</div>'}).join('')+
+    '</div></div>':'';
+  const masterSummary=(!API_MODE||canOpen('masters'))&&['workers','customers','suppliers','products','expenseCats'].some(l=>DB[l].length)?
+    '<div class="card setup"><h3>Saved lists</h3><p>Previously added items are saved here and can be reused in new daily entries.</p><div class="setup-grid">'+
+    [['workers','Workers'],['customers','Customers'],['suppliers','Suppliers'],['products','Products'],['expenseCats','Expense categories']].map(([l,label])=>
+      '<button class="setup-item" data-action="goto-master" data-v="'+l+'"><span class="si-l">'+label+'</span><span class="badge s">'+DB[l].length+' saved</span></button>').join('')+
+    '</div><div class="modal-actions"><button class="btn" data-action="goto-master" data-v="workers">Open saved lists</button></div></div>':'';
+  return '<div class="page-head"><div><h1>Dashboard</h1><div class="sub">'+fmtLong(d)+'</div></div></div>'+
+    dateNav()+setupCard+masterSummary+
+    '<div class="stat-grid">'+
+    statCard('Production',fmtNum(prod)+' units','production')+
+    statCard('Sales',fmtMoney(sales),'sales')+
+    statCard('Purchases',fmtMoney(purch),'purchases')+
+    statCard('Expenses',fmtMoney(exp),'expenses')+
+    statCard('Attendance',present+' / '+wActive+' present','attendance')+
+    '</div>'+
+    '<div class="qa-row">'+
+    '<button class="btn" data-action="nav" data-v="attendance">'+I.users+' Mark Attendance</button>'+
+    '<button class="btn" data-action="nav" data-v="sales">'+I.cart+' New Sale</button>'+
+    '<button class="btn" data-action="nav" data-v="purchases">'+I.truck+' New Purchase</button>'+
+    '<button class="btn" data-action="nav" data-v="expenses">'+I.wallet+' Add Expense</button></div>'+
+    '<div class="hint">Numbers are real — they start at zero and update as you record daily data. No sample data is included.</div>';
+}
+
+/* ================= ATTENDANCE ================= */
+function viewAttendance(){
+  if(!DB.workers.length)return emptyState({icon:I.users,title:'No workers added yet',
+    text:'Add your workers once — then record their daily attendance with a single click. They will appear here automatically every day.',
+    btn:'Add Worker',act:'master-add',list:'workers'});
+  const d=UI.date;
+  const rows=active('workers').map(w=>{
+    const a=attRec(w.id,d),st=a?a.status:'';
+    const hide=(UI.attFilter!=='all'&&st!==UI.attFilter)?' style="display:none"':'';
+    return '<tr data-name="'+esc(w.name)+'" data-st="'+st+'" data-action="open-att" data-id="'+w.id+'"'+hide+'>'+
+      '<td class="c-name">'+esc(w.name)+'</td>'+
+      '<td>'+(st?'<span class="badge '+ATT[st].cls+'">'+ATT[st].label+'</span>':'<span class="mut">—</span>')+'</td>'+
+      '<td class="hn-md">'+(a&&a.arrival?fmtTime(a.arrival):'—')+'</td>'+
+      '<td class="hn-md">'+(a&&a.ot?a.ot+'h':'—')+'</td>'+
+      '<td><div class="qg">'+['present','absent','leave'].map(s=>
+        '<button class="qbtn '+(st===s?'on '+ATT[s].cls:'')+'" data-action="quick-att" data-id="'+w.id+'" data-v="'+s+'">'+ATT[s].l+'</button>').join('')+'</div></td></tr>';
+  }).join('');
+  return '<div class="page-head"><div><h1>Attendance</h1><div class="sub">'+fmtLong(d)+'</div></div>'+
+    '<button class="btn primary" data-action="mark-all-present">'+I.check+' Mark All Present</button></div>'+
+    dateNav()+
+    '<div class="toolbar">'+searchBox('Search workers...','#att-body')+
+    '<div class="chip-row">'+chips([['all','All'],['present','Present'],['absent','Absent'],['leave','Leave']],UI.attFilter,'att-filter')+'</div>'+
+    '<div class="seg mini">'+['day','week'].map(m=>'<button class="'+(UI.attMode===m?'on':'')+'" data-action="att-mode" data-v="'+m+'">'+(m==='day'?'Day':'Week')+'</button>').join('')+'</div></div>'+
+    (UI.attMode==='day'
+      ?'<div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Worker</th><th>Status</th><th class="hn-md">Arrival</th><th class="hn-md">OT</th><th>Quick</th></tr></thead><tbody id="att-body">'+rows+'</tbody></table></div></div>'
+      :attWeek())+
+    '<div class="hint">Tip: P / A / L mark instantly. Click a row (or a week cell) for arrival, departure, OT, half day & notes.</div>';
+}
+function attWeek(){
+  const d0=parseD(UI.date),start=addDays(UI.date,-((d0.getDay()+6)%7)); // Monday
+  const days=[...Array(7)].map((_,i)=>addDays(start,i));
+  const head='<tr><th>Worker</th>'+days.map(dd=>'<th class="wc-h '+(dd===UI.date?'today':'')+'">'+fmtDay(dd)+'</th>').join('')+'</tr>';
+  const rows=active('workers').map(w=>'<tr data-name="'+esc(w.name)+'"><td class="c-name">'+esc(w.name)+'</td>'+
+    days.map(dd=>{const a=attRec(w.id,dd),st=a?a.status:'';
+      return '<td class="wc '+(st?'c-'+ATT[st].cls:'')+'" data-action="open-att" data-id="'+w.id+'" data-d="'+dd+'">'+
+        (st?ATT[st].l:'<span class="dot">·</span>')+'</td>'}).join('')+'</tr>').join('');
+  return '<div class="card"><div class="tbl-wrap"><table class="tbl wk"><thead>'+head+'</thead><tbody id="att-body">'+rows+'</tbody></table></div></div>'+
+    '<div class="hint">Showing week of '+fmtShort(start)+'. Click any cell to edit that day.</div>';
+}
+function applyAtt(){
+  const q=(UI.attSearch||'').toLowerCase();
+  document.querySelectorAll('#att-body [data-name]').forEach(tr=>{
+    const okQ=!q||tr.dataset.name.toLowerCase().includes(q);
+    const okF=UI.attMode==='week'||UI.attFilter==='all'||tr.dataset.st===UI.attFilter;
+    tr.style.display=okQ&&okF?'':'none';
+  });
+}
+function openAttModal(wid,d){
+  const w=byId('workers',wid),a=attRec(wid,d);
+  MCTX={wid,d,status:a?a.status:'present'};
+  openModal('Attendance','<div class="m-sub"><b>'+esc(w.name)+'</b> · '+fmtShort(d)+'</div>'+
+    '<div class="seg">'+[['present','Present'],['absent','Absent'],['leave','Leave'],['half','Half Day']].map(([v,l])=>
+      '<button class="'+(MCTX.status===v?'on':'')+'" data-action="att-set" data-v="'+v+'">'+l+'</button>').join('')+'</div>'+
+    '<div class="frow"><div class="field"><label>Arrival</label><input id="f-ar" type="time" class="input" value="'+(a?.arrival||'')+'"></div>'+
+    '<div class="field"><label>Departure</label><input id="f-de" type="time" class="input" value="'+(a?.departure||'')+'"></div></div>'+
+    '<div class="field"><label>OT Hours</label><input id="f-ot" type="number" min="0" step="0.5" class="input" value="'+(a?.ot??'')+'"></div>'+
+    '<div class="field"><label>Notes</label><input id="f-no" class="input" value="'+esc(a?.notes||'')+'"></div>'+
+    '<div class="modal-actions">'+(a?'<button class="btn danger" data-action="att-remove">Remove</button>':'')+
+    '<button class="btn primary" data-action="att-save">Save</button></div>');
+}
+
+/* ================= PRODUCTION ================= */
+function viewProduction(){
+  if(!DB.products.length)return emptyState({icon:I.layers,title:'No products added yet',
+    text:'Add your products / fabrics once — then enter daily production with just a quantity. Products appear here automatically.',
+    btn:'Add Product',act:'master-add',list:'products'});
+  const d=UI.date;
+  const rows=active('products').map(p=>{const saved=prodRec(p.id,d),r=saved[0]||null;
+    return '<tr data-name="'+esc(p.name)+'"><td class="c-name">'+esc(p.name)+'</td>'+
+      '<td class="qty-cell"><input type="number" min="0" step="any" class="input" id="pq-'+p.id+'" placeholder="0"></td>'+
+      '<td class="mut hn-md">'+(esc(p.unit)||'—')+'</td>'+
+      '<td><select class="input sel-sm" id="pg-'+p.id+'">'+['','A','B','C'].map(g=>
+        '<option value="'+g+'" '+(((r?.grade)||'')===g?'selected':'')+'>'+(g||'Grade —')+'</option>').join('')+'</select></td>'+
+      '<td class="rowact"><button class="btn sm primary" data-action="prod-save" data-id="'+p.id+'">Add entry</button></td></tr>'+saved.map(r=>'<tr><td colspan="2">Saved: '+fmtNum(r.quantity)+'</td><td>'+esc(r.grade||'')+'</td><td colspan="2"><button class="ibtn danger" data-action="prod-remove" data-id="'+r.id+'">'+I.trash+'</button></td></tr>').join('')}).join('');
+  const total=DB.production.filter(x=>x.date===d).reduce((t,x)=>t+(+x.quantity||0),0);
+  return '<div class="page-head"><div><h1>Production</h1><div class="sub">'+fmtLong(d)+' · Total: '+fmtNum(total)+' units</div></div></div>'+
+    dateNav()+
+    '<div class="toolbar">'+searchBox('Search products...','#prod-body')+'</div>'+
+    '<div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product / Fabric</th><th>Quantity</th><th class="hn-md">Unit</th><th>Grade</th><th></th></tr></thead><tbody id="prod-body">'+rows+'</tbody></table></div></div>'+
+    '<div class="hint">Type the quantity and press Save — it is stored for '+fmtShort(d)+'. Saving 0 removes the entry.</div>';
+}
+
+/* ================= INVENTORY ================= */
+function viewInventory(){
+  if(!DB.products.length)return emptyState({icon:I.box,title:'No products added yet',
+    text:'Products appear here automatically once you add them to your master list.',
+    btn:'Add Product',act:'master-add',list:'products'});
+  const d=UI.date;
+  const rows=active('products').map(p=>{const{s,st}=stockStatus(p.id);
+    const hide=(UI.stockFilter!=='all'&&st!==UI.stockFilter)?' style="display:none"':'';
+    return '<tr data-name="'+esc(p.name)+'" data-action="open-stock" data-id="'+p.id+'"'+hide+'>'+
+      '<td class="c-name">'+esc(p.name)+'</td>'+
+      '<td class="num">'+fmtNum(s)+' '+(esc(p.unit)||'')+'</td>'+
+      '<td class="num hn-md">'+fmtNum(p.minStock)+' '+(esc(p.unit)||'')+'</td>'+
+      '<td><span class="badge '+STK[st][1]+'">'+STK[st][0]+'</span></td>'+
+      '<td class="rowact"><button class="btn sm" data-action="open-stock" data-id="'+p.id+'">Manage</button></td></tr>'}).join('');
+  return '<div class="page-head"><div><h1>Inventory</h1><div class="sub">'+fmtLong(d)+'</div></div></div>'+
+    dateNav()+
+    '<div class="toolbar">'+searchBox('Search products...','#inv-body')+
+    '<div class="chip-row">'+chips([['all','All'],['ok','In Stock'],['low','Low Stock'],['out','Out of Stock']],UI.stockFilter,'stock-filter')+'</div></div>'+
+    '<div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th class="num">Stock</th><th class="num hn-md">Minimum</th><th>Status</th><th></th></tr></thead><tbody id="inv-body">'+rows+'</tbody></table></div></div>'+
+    '<div class="hint">Stock = production + purchases + manual additions − sales − removals. Click a product to add, remove or adjust stock.</div>';
+}
+function openStockModal(pid){
+  const p=byId('products',pid),s=stockOf(pid);
+  MCTX={pid,type:'add'};
+  const hist=DB.stock.filter(t=>t.productId===pid).slice(-5).reverse();
+  const TN={add:'Add',remove:'Remove',adjust:'Adjust'};
+  openModal(esc(p.name),
+    '<div class="m-sub">Current stock: <b>'+fmtNum(s)+' '+(esc(p.unit)||'')+'</b></div>'+
+    '<div class="seg"><button class="on" data-action="stk-type" data-v="add">+ Add</button>'+
+    '<button data-action="stk-type" data-v="remove">− Remove</button>'+
+    '<button data-action="stk-type" data-v="adjust">Adjust</button></div>'+
+    '<div class="field"><label id="stk-lbl">Quantity to add</label><input id="f-sq" type="number" min="0" step="any" class="input" placeholder="0"></div>'+
+    '<div class="field"><label>Reason</label><select id="f-sr" class="input"><option>Purchase</option><option>Production</option><option>Sale</option><option>Adjustment</option></select></div>'+
+    '<div class="modal-actions"><button class="btn primary" data-action="stock-save">Save</button></div>'+
+    (hist.length?'<div class="m-hist"><h4>Recent stock changes</h4>'+hist.map(t=>
+      '<div class="h-row"><span class="mut">'+fmtShort(t.date)+'</span><span>'+TN[t.type]+'</span><b>'+
+      (t.type==='adjust'?'→ ':(t.type==='add'?'+ ':'− '))+fmtNum(t.qty)+'</b><span class="mut">'+esc(t.reason||'')+'</span></div>').join('')+'</div>':''));
+}
+
+/* ================= SALES & PURCHASES (shared pattern) ================= */
+function viewTxn(k){
+  const C=TXN[k];
+  if(!DB[C.party].length)return emptyState({icon:k==='sales'?I.cart:I.truck,title:C.emptyTitle,
+    text:C.emptyText,btn:C.emptyBtn,act:'master-add',list:C.party});
+  if(UI[C.sel])return txDetail(k,UI[C.sel]);
+  const d=UI.date;
+  const rows=active(C.party).map(p=>{
+    const recs=DB[k].filter(s=>s[C.partyKey]===p.id&&s.date===d);
+    const total=recs.reduce((t,s)=>t+s.qty*s.rate,0),paid=recs.reduce((t,s)=>t+(+s.paid||0),0);
+    const st=recs.length?(paid>=total?'paid':paid>0?'partial':'unpaid'):'none';
+    const hide=(UI[C.filter]!=='all'&&st!==UI[C.filter])?' style="display:none"':'';
+    const b={paid:['Paid','g'],partial:['Partial','a'],unpaid:['Unpaid','r'],none:null}[st];
+    return '<div class="row-item clickable" data-name="'+esc(p.name)+'" data-action="tx-open" data-kind="'+k+'" data-id="'+p.id+'"'+hide+'>'+
+      '<div class="grow"><div class="r-name">'+esc(p.name)+'</div><div class="r-sub">'+recs.length+' record'+(recs.length===1?'':'s')+'</div></div>'+
+      (b?'<span class="badge '+b[1]+'">'+b[0]+'</span>':'')+
+      '<span class="r-amt">'+fmtMoney(total)+'</span><span class="chev">'+I.chev+'</span></div>';
+  }).join('');
+  return '<div class="page-head"><div><h1>'+C.title+'</h1><div class="sub">'+fmtLong(d)+'</div></div>'+
+    '<button class="btn primary" data-action="tx-add" data-kind="'+k+'">'+I.plus+' Add '+C.item+'</button></div>'+
+    dateNav()+
+    '<div class="toolbar">'+searchBox(C.search,'#'+C.listId)+
+    '<div class="chip-row">'+chips([['all','All'],['paid','Paid'],['partial','Partial'],['unpaid','Unpaid']],UI[C.filter],'tx-filter','data-kind="'+k+'"')+'</div></div>'+
+    '<div class="card list" id="'+C.listId+'">'+rows+'</div>'+
+    '<div class="hint">Click a '+C.partySingular+' to view and manage today\'s records.</div>';
+}
+function txDetail(k,pid){
+  const C=TXN[k],p=byId(C.party,pid),d=UI.date;
+  const recs=DB[k].filter(s=>s[C.partyKey]===pid&&s.date===d);
+  const total=recs.reduce((t,s)=>t+s.qty*s.rate,0),paid=recs.reduce((t,s)=>t+(+s.paid||0),0),bal=total-paid;
+  return '<div class="page-head"><div>'+
+    '<button class="backlink" data-action="tx-back" data-kind="'+k+'">'+I.left+' Back to '+(C.party==='customers'?'customers':'suppliers')+'</button>'+
+    '<h1>'+esc(p.name)+'</h1><div class="sub">'+fmtLong(d)+'</div></div>'+
+    '<button class="btn primary" data-action="tx-add" data-kind="'+k+'" data-cid="'+pid+'">'+I.plus+' Add '+C.item+'</button></div>'+
+    (recs.length
+      ?'<div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th>Qty</th><th class="num">Rate</th><th class="num">Total</th><th></th></tr></thead><tbody>'+
+       recs.map(s=>{const pr=byId('products',s.productId);
+         return '<tr><td class="c-name">'+(pr?esc(pr.name):'<span class="mut">(removed product)</span>')+'</td>'+
+         '<td>'+s.qty+'</td><td class="num">'+fmtMoney(s.rate)+'</td><td class="num"><b>'+fmtMoney(s.qty*s.rate)+'</b></td>'+
+         '<td class="rowact"><button class="ibtn" data-action="tx-edit" data-kind="'+k+'" data-id="'+s.id+'">'+I.edit+'</button>'+
+         '<button class="ibtn danger" data-action="tx-remove" data-kind="'+k+'" data-id="'+s.id+'">'+I.trash+'</button></td></tr>'}).join('')+
+       '</tbody></table></div><div class="totals">'+
+       '<div><span>Total</span><b>'+fmtMoney(total)+'</b></div>'+
+       '<div><span>Paid</span><b>'+fmtMoney(paid)+'</b></div>'+
+       '<div><span>Balance</span><b class="'+(bal>0?'txr':'')+'">'+fmtMoney(bal)+'</b></div></div></div>'
+      :'<div class="card"><div class="empty"><h3>Nothing recorded for this '+C.partySingular+' today</h3><p>Use "Add '+C.item+'" to record the first entry.</p></div></div>');
+}
+function openTxnModal(k,cid,sid){
+  const C=TXN[k];
+  if(!active(C.party).length){toast('Add a '+C.partySingular+' first');openMasterModal(C.party);return}
+  if(!active('products').length){toast('Add a product first');openMasterModal('products');return}
+  const r=sid?byId(k,sid):null;
+  openModal((r?'Edit ':'Add ')+C.item,
+    '<div class="m-sub">Date: '+fmtShort(UI.date)+'</div>'+
+    '<div class="field"><label>'+C.partyLabel()+'</label><select id="f-pa" class="input">'+opts(active(C.party),r?r[C.partyKey]:cid)+'</select></div>'+
+    '<div class="field"><label>Product</label><select id="f-pr" class="input">'+opts(active('products'),r?.productId)+'</select></div>'+
+    '<div class="frow"><div class="field"><label>Quantity</label><input id="f-q" type="number" min="0" step="any" class="input" value="'+(r?.qty??'')+'" placeholder="0"></div>'+
+    '<div class="field"><label>Rate (PKR)</label><input id="f-r" type="number" min="0" step="any" class="input" value="'+(r?.rate??'')+'" placeholder="0"></div></div>'+
+    '<div class="field"><label>Paid (PKR)</label><input id="f-pd" type="number" min="0" step="any" class="input" value="'+(r?.paid??'')+'" placeholder="0"></div>'+
+    '<div class="modal-actions"><button class="btn primary" data-action="tx-save" data-kind="'+k+'" data-id="'+(sid||'')+'">Save '+C.item+'</button></div>');
+}
+TXN.sales.partyLabel=()=>'Customer / Party';
+TXN.purchases.partyLabel=()=>'Supplier';
+
+/* ================= EXPENSES ================= */
+function viewExpenses(){
+  if(!DB.expenseCats.length)return emptyState({icon:I.wallet,title:'No expense categories yet',
+    text:'Add categories like Labour, Transport, Electricity — once. They appear here every day.',
+    btn:'Add Category',act:'master-add',list:'expenseCats'});
+  const d=UI.date;
+  const rows=active('expenseCats').map(c=>{
+    const es=DB.expenses.filter(e=>e.categoryId===c.id&&e.date===d);
+    const sum=es.reduce((t,e)=>t+(+e.amount||0),0);
+    return '<div class="row-item clickable" data-name="'+esc(c.name)+'" data-action="open-exp" data-id="'+c.id+'">'+
+      '<div class="grow"><div class="r-name">'+esc(c.name)+'</div><div class="r-sub">'+es.length+' entr'+(es.length===1?'y':'ies')+'</div></div>'+
+      '<span class="r-amt">'+fmtMoney(sum)+'</span><span class="chev">'+I.chev+'</span></div>'}).join('');
+  const total=DB.expenses.filter(e=>e.date===d).reduce((t,e)=>t+(+e.amount||0),0);
+  return '<div class="page-head"><div><h1>Expenses</h1><div class="sub">'+fmtLong(d)+'</div></div>'+
+    '<button class="btn primary" data-action="exp-add">'+I.plus+' Add Expense</button></div>'+
+    dateNav()+
+    '<div class="toolbar">'+searchBox('Search categories...','#exp-list')+'</div>'+
+    '<div class="card list" id="exp-list">'+rows+'</div>'+
+    '<div class="total-bar"><span>Today\'s total</span><b>'+fmtMoney(total)+'</b></div>'+
+    '<div class="hint">Click a category to view, edit or remove today\'s entries.</div>';
+}
+function openExpCat(cid){
+  const c=byId('expenseCats',cid);
+  const es=DB.expenses.filter(e=>e.categoryId===cid&&e.date===UI.date);
+  const sum=es.reduce((t,e)=>t+(+e.amount||0),0);
+  openModal(esc(c.name),
+    '<div class="m-sub">'+fmtLong(UI.date)+' · Total '+fmtMoney(sum)+'</div>'+
+    (es.length?es.map(e=>'<div class="h-row"><span>'+esc(e.note||'Expense')+'</span><b>'+fmtMoney(e.amount)+'</b>'+
+      '<span class="h-act"><button class="ibtn" data-action="exp-edit" data-id="'+e.id+'">'+I.edit+'</button>'+
+      '<button class="ibtn danger" data-action="exp-remove" data-id="'+e.id+'">'+I.trash+'</button></span></div>').join('')
+     :'<p class="mut-c">No expenses in this category today.</p>')+
+    '<div class="modal-actions"><button class="btn primary" data-action="exp-add" data-cid="'+cid+'">'+I.plus+' Add Expense</button></div>');
+}
+function openExpenseModal(cid,eid){
+  if(!active('expenseCats').length){toast('Add a category first');openMasterModal('expenseCats');return}
+  const e=eid?byId('expenses',eid):null;
+  openModal(eid?'Edit Expense':'Add Expense',
+    '<div class="m-sub">Date: '+fmtShort(UI.date)+'</div>'+
+    '<div class="field"><label>Category</label><select id="f-c" class="input">'+opts(active('expenseCats'),e?e.categoryId:cid)+'</select></div>'+
+    '<div class="field"><label>Amount (PKR)</label><input id="f-a" type="number" min="0" step="any" class="input" value="'+(e?.amount??'')+'" placeholder="0"></div>'+
+    '<div class="field"><label>Note (optional)</label><input id="f-n" class="input" value="'+esc(e?.note||'')+'"></div>'+
+    '<div class="modal-actions"><button class="btn primary" data-action="exp-save" data-id="'+(eid||'')+'">Save Expense</button></div>');
+}
+
+/* ================= PERIOD REPORTS ================= */
+function reportRange(){
+  if(UI.reportMode==='month'){
+    const start=UI.date.slice(0,7)+'-01',d=parseD(start),end=dstr(new Date(d.getFullYear(),d.getMonth()+1,1));
+    return{start,end,label:MONTHS[d.getMonth()]+' '+d.getFullYear()};
+  }
+  const offset=(parseD(UI.date).getDay()+3)%7,start=addDays(UI.date,-offset),end=addDays(start,7);
+  return{start,end,label:fmtShort(start)+' to '+fmtShort(addDays(end,-1))};
+}
+function reportTable(title,headers,rows){
+  return '<section class="report-section"><h2>'+title+'</h2><div class="card tbl-wrap"><table class="tbl"><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+
+    (rows.length?rows.join(''):'<tr><td colspan="'+headers.length+'" class="mut">No records for this period.</td></tr>')+'</tbody></table></div></section>';
+}
+function viewReports(){
+  const{start,end,label}=reportRange(),within=rows=>rows.filter(x=>x.date>=start&&x.date<end);
+  const ats=within(DB.attendance),prods=within(DB.production),sales=within(DB.sales),purchases=within(DB.purchases),expenses=within(DB.expenses);
+  const sums={sales:sales.reduce((n,x)=>n+x.qty*x.rate,0),purchases:purchases.reduce((n,x)=>n+x.qty*x.rate,0),expenses:expenses.reduce((n,x)=>n+(+x.amount||0),0)};
+  const attendanceRows=ats.map(x=>'<tr><td>'+fmtShort(x.date)+'</td><td data-user-content>'+esc(byId('workers',x.workerId)?.name||'—')+'</td><td>'+ATT[x.status]?.label+'</td><td>'+fmtTime(x.arrival)+'</td><td>'+fmtTime(x.departure)+'</td><td>'+esc(x.ot||'0')+'</td></tr>');
+  const productionRows=prods.map(x=>'<tr><td>'+fmtShort(x.date)+'</td><td data-user-content>'+esc(byId('products',x.productId)?.name||'—')+'</td><td>'+fmtNum(x.quantity)+'</td><td>'+esc(x.grade||'—')+'</td></tr>');
+  const transactionRows=(items,key)=>items.map(x=>'<tr><td>'+fmtShort(x.date)+'</td><td data-user-content>'+esc(byId(key==='customerId'?'customers':'suppliers',x[key])?.name||'—')+'</td><td data-user-content>'+esc(byId('products',x.productId)?.name||'—')+'</td><td>'+fmtNum(x.qty)+'</td><td>'+fmtMoney(x.rate)+'</td><td>'+fmtMoney(x.qty*x.rate)+'</td><td>'+fmtMoney(x.paid)+'</td><td>'+fmtMoney(x.qty*x.rate-(+x.paid||0))+'</td></tr>');
+  const expenseRows=expenses.map(x=>'<tr><td>'+fmtShort(x.date)+'</td><td data-user-content>'+esc(byId('expenseCats',x.categoryId)?.name||'—')+'</td><td data-user-content>'+esc(x.note||'—')+'</td><td>'+fmtMoney(x.amount)+'</td></tr>');
+  return '<div class="page-head report-tools"><div><h1>Period Receipts &amp; Reports</h1><div class="sub">'+label+' · Thursday-to-Thursday weeks</div></div><button class="btn primary" data-action="print-report">Print / Save PDF</button></div>'+dateNav()+
+    '<div class="seg mini report-tools">'+[['week','Weekly'],['month','Monthly']].map(([v,t])=>'<button class="'+(UI.reportMode===v?'on':'')+'" data-action="report-mode" data-v="'+v+'">'+t+'</button>').join('')+'</div>'+ 
+    '<div class="report-heading"><h1>Warehouse Management</h1><p>'+label+' · '+fmtShort(start)+' — '+fmtShort(addDays(end,-1))+'</p></div>'+ 
+    '<div class="stat-grid report-stats">'+statCard('Sales',fmtMoney(sums.sales),'reports')+statCard('Purchases',fmtMoney(sums.purchases),'reports')+statCard('Expenses',fmtMoney(sums.expenses),'reports')+statCard('Attendance entries',fmtNum(ats.length),'reports')+statCard('Production',fmtNum(prods.reduce((n,x)=>n+(+x.quantity||0),0))+' units','reports')+'</div>'+ 
+    reportTable('Attendance',['Date','Worker','Status','Arrival','Departure','OT hours'],attendanceRows)+
+    reportTable('Production',['Date','Product','Quantity','Grade'],productionRows)+
+    reportTable('Sales receipts',['Date','Customer / Party','Product','Quantity','Rate','Total','Paid','Balance'],transactionRows(sales,'customerId'))+
+    reportTable('Purchase receipts',['Date','Supplier','Product','Quantity','Rate','Total','Paid','Balance'],transactionRows(purchases,'supplierId'))+
+    reportTable('Expense receipts',['Date','Category','Note','Amount'],expenseRows);
+}
+
+/* ================= ADMIN ACCESS ================= */
+const PERMISSIONS=[['dashboard','Dashboard'],['attendance','Attendance'],['production','Production'],['inventory','Inventory'],['sales','Sales'],['purchases','Purchases'],['expenses','Expenses'],['masters','Master Data'],['reports','Reports']];
+function viewAccess(){
+  const rows=DB.users.map(user=>'<div class="row-item"><div class="grow"><div class="r-name">'+esc(user.name)+'</div><div class="r-sub">'+esc(user.username)+' · '+(user.role==='admin'?'Administrator':(user.permissions||[]).length+' sections')+'</div></div><span class="badge '+(user.active?'g':'n')+'">'+(user.active?'Active':'Inactive')+'</span>'+ 
+    (user.role==='admin'?'':'<span class="h-act"><button class="btn sm" data-action="caretaker-edit" data-id="'+user.id+'">Manage</button><button class="ibtn" title="Activate or deactivate" data-action="caretaker-toggle" data-id="'+user.id+'">'+I.power+'</button></span>')+'</div>').join('');
+  return '<div class="page-head"><div><h1>Admin &amp; Access</h1><div class="sub">Create caretaker logins and choose which sections they can use.</div></div><button class="btn primary" data-action="caretaker-add">'+I.plus+' Add Caretaker</button></div>'+ 
+    '<div class="card list">'+rows+'</div><div class="danger-zone"><button class="btn sm" data-action="backup-data">Download data backup</button><span>Keep a separate copy of this browser-stored data.</span></div>';
+}
+function openCaretakerModal(id){
+  const user=id?byId('users',id):null,perms=user?.permissions||['dashboard'];
+  openModal(user?'Manage Caretaker':'Add Caretaker','<div class="field"><label>Full name</label><input id="f-uname" class="input" value="'+esc(user?.name||'')+'"></div>'+ 
+    '<div class="field"><label>Username</label><input id="f-uuser" class="input" value="'+esc(user?.username||'')+'" autocomplete="off"></div>'+ 
+    '<div class="field"><label>'+(user?'New password (leave blank to keep current)':'Password (at least 8 characters)')+'</label><input id="f-upass" class="input" type="password" minlength="8" autocomplete="new-password"></div>'+ 
+    '<fieldset class="permission-list"><legend>Allowed sections</legend>'+PERMISSIONS.map(([v,label])=>'<label><input type="checkbox" name="permission" value="'+v+'" '+(perms.includes(v)?'checked':'')+'> '+label+'</label>').join('')+'</fieldset>'+ 
+    '<div class="modal-actions"><button class="btn primary" data-action="caretaker-save" data-id="'+(id||'')+'">Save access</button></div>');
+}
+
+/* ================= MASTER DATA ================= */
+const TABS=[['workers','Workers'],['customers','Customers'],['suppliers','Suppliers'],['products','Products'],['expenseCats','Categories']];
+function viewMasters(){
+  const t=UI.mastersTab,M=MASTER[t],items=DB[t];
+  const rows=items.map(x=>{
+    const meta=t==='products'?'<div class="r-sub">'+(esc(x.unit)||'no unit')+(x.minStock?' · min '+fmtNum(x.minStock):'')+'</div>':'';
+    return '<div class="row-item '+(x.active?'':'inactive')+'" data-name="'+esc(x.name)+'">'+
+      '<div class="grow"><div class="r-name">'+esc(x.name)+'</div>'+meta+'</div>'+
+      '<span class="badge '+(x.active?'g':'n')+'">'+(x.active?'Active':'Inactive')+'</span>'+
+      '<span class="h-act">'+
+      '<button class="ibtn" data-action="master-edit" data-l="'+t+'" data-id="'+x.id+'" title="Edit">'+I.edit+'</button>'+
+      '<button class="ibtn" data-action="master-toggle" data-l="'+t+'" data-id="'+x.id+'" title="'+(x.active?'Deactivate':'Activate')+'">'+I.power+'</button>'+
+      '<button class="ibtn danger" data-action="master-delete" data-l="'+t+'" data-id="'+x.id+'" title="Remove">'+I.trash+'</button></span></div>';
+  }).join('');
+  return '<div class="page-head"><div><h1>Master Data</h1><div class="sub">Enter names & items once — they appear automatically in every daily screen.</div></div>'+
+    '<button class="btn primary" data-action="master-add" data-l="'+t+'">'+I.plus+' '+M.add+'</button></div>'+
+    '<div class="chip-row tabs" style="margin-bottom:14px">'+TABS.map(([v,l])=>
+      '<button class="chip '+(UI.mastersTab===v?'on':'')+'" data-action="master-tab" data-v="'+v+'">'+l+' <span class="cnt">'+DB[v].length+'</span></button>').join('')+'</div>'+
+    '<div class="toolbar">'+searchBox('Search...','#mast-list')+'</div>'+
+    (items.length?'<div class="card list" id="mast-list">'+rows+'</div>'
+      :emptyState({icon:I.db,title:'No '+M.title.toLowerCase()+' added yet',
+        text:'Use "'+M.add+'" — this list will then power the daily screens automatically.',
+        btn:M.add,act:'master-add',list:t}))+
+    '<div class="hint">Deletion is protected: items with history are deactivated instead, so records are never lost. Inactive items are hidden from daily screens but keep all their history.</div>'+
+    '<div class="danger-zone"><button class="btn danger sm" data-action="reset-data">Reset all data</button><span>Clears everything stored in this browser.</span></div>';
+}
+function openMasterModal(l,id){
+  const M=MASTER[l],it=id?byId(l,id):null;
+  openModal(it?('Edit '+M.singular[0].toUpperCase()+M.singular.slice(1)):M.add,
+    '<div class="field"><label>Name</label><input id="f-nm" class="input" value="'+esc(it?.name||'')+'" placeholder="'+M.title+'"></div>'+
+    (M.prod?'<div class="frow"><div class="field"><label>Unit (yd, kg, pcs…)</label><input id="f-un" class="input" value="'+esc(it?.unit||'')+'"></div>'+
+      '<div class="field"><label>Minimum stock</label><input id="f-mn" type="number" min="0" step="any" class="input" value="'+(it?.minStock??'')+'"></div></div>':'')+
+    '<div class="modal-actions"><button class="btn primary" data-action="master-save" data-l="'+l+'" data-id="'+(id||'')+'">Save</button></div>');
+}
+function requestMasterDelete(l,id){
+  const item=byId(l,id),used=hasHistory(l,id);
+  if(used){
+    confirmModal({title:'Deactivate "'+esc(item.name)+'"?',
+      message:'This '+MASTER[l].singular+' has historical records, so it cannot be permanently deleted. Deactivating hides it from daily screens while keeping all history safe.',
+      confirmText:'Deactivate',danger:false,
+      onConfirm(){item.active=false;save();toast('Marked inactive — history preserved');render()}});
+  }else{
+    confirmModal({title:'Remove "'+esc(item.name)+'"?',
+      message:'Are you sure you want to remove <b>'+esc(item.name)+'</b>? This cannot be undone.',
+      confirmText:'Remove',
+      onConfirm(){DB[l]=DB[l].filter(x=>x.id!==id);save();toast('Removed');render()}});
+  }
+}
+
+/* ================= EVENT DELEGATION ================= */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-action]');if(!el)return;
+  const a=el.dataset.action,id=el.dataset.id,v=el.dataset.v,l=el.dataset.l,k=el.dataset.kind;
+  switch(a){
+    case 'nav':if(!canOpen(v)){toast('You do not have access to this section');break}UI.view=v;UI.salesSel=null;UI.purchSel=null;closeSide();render();window.scrollTo(0,0);break;
+    case 'goto-master':UI.view='masters';UI.mastersTab=v;closeSide();render();window.scrollTo(0,0);break;
+    case 'sign-out':{
+      clearInterval(window.CLOUD_TIMER);
+      if(API_MODE)apiRequest('/api/logout',{method:'POST'}).catch(()=>{});
+      SESSION=null;sessionStorage.removeItem(AUTH_KEY);UI.view='dashboard';
+      if(API_MODE){DB=blank();localStorage.removeItem(LS)}
+      showAuth();break}
+    case 'report-mode':UI.reportMode=v;render();break;
+    case 'print-report':window.print();break;
+    case 'caretaker-add':openCaretakerModal(null);break;
+    case 'caretaker-edit':openCaretakerModal(id);break;
+    case 'caretaker-toggle':{
+      const user=byId('users',id),active=!user.active;
+      if(API_MODE){apiRequest('/api/accounts/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({active})}).then(({user:updated})=>{
+        DB.users=DB.users.map(x=>x.id===id?updated:x);localStorage.setItem(LS,JSON.stringify(DB));render();toast(active?'Caretaker activated':'Caretaker deactivated');
+      }).catch(error=>toast(error.message))}
+      else{user.active=active;save();render();toast(active?'Caretaker activated':'Caretaker deactivated')}
+      break}
+    case 'caretaker-save':{
+      (async()=>{const user=id?byId('users',id):null,name=$('#f-uname').value.trim(),username=$('#f-uuser').value.trim().toLowerCase(),password=$('#f-upass').value,permissions=[...document.querySelectorAll('#modal-root [name="permission"]:checked')].map(x=>x.value);
+        if(!name||!username){toast('Name and username are required');return}
+        if(!permissions.length){toast('Select at least one section');return}
+        if(DB.users.some(x=>x.username===username&&x.id!==id)){toast('That username is already in use');return}
+        if(!user&&!password){toast('Set a password of at least 8 characters');return}
+        if(password&&password.length<8){toast('Password must have at least 8 characters');return}
+        if(API_MODE){
+          const input={name,username,permissions,...(password?{password}:{})};
+          const response=await apiRequest(user?'/api/accounts/'+encodeURIComponent(id):'/api/accounts',{
+            method:user?'PATCH':'POST',body:JSON.stringify(input)
+          });
+          if(user)DB.users=DB.users.map(x=>x.id===id?response.user:x);else DB.users.push(response.user);
+          localStorage.setItem(LS,JSON.stringify(DB));closeModal();render();toast('Caretaker access saved');return;
+        }
+        const saved=user||{id:uid(),role:'caretaker',active:true};saved.name=name;saved.username=username;saved.permissions=permissions;
+        if(password)saved.passwordHash=await passwordHash(password);
+        if(!user)DB.users.push(saved);save();closeModal();render();toast('Caretaker access saved');
+      })().catch(err=>toast(err.message||'Unable to save account'));break}
+    case 'backup-data':{const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='warehouse-backup-'+todayStr()+'.json';a.click();URL.revokeObjectURL(url);toast('Backup downloaded');break}
+    case 'toggle-side':$('#sidebar').classList.add('open');$('#backdrop').classList.add('show');break;
+    case 'close-side':closeSide();break;
+
+    case 'date-prev':UI.date=addDays(UI.date,-1);render();break;
+    case 'date-next':UI.date=addDays(UI.date,1);render();break;
+    case 'date-today':UI.date=todayStr();render();break;
+    case 'date-pick':{const i=$('#date-input');i.value=UI.date;try{i.showPicker()}catch(_){i.focus()}}break;
+
+    /* attendance */
+    case 'att-filter':UI.attFilter=v;render();break;
+    case 'att-mode':UI.attMode=v;render();break;
+    case 'mark-all-present':{
+      const ws=active('workers');
+      if(!ws.length){toast('Add workers first');break}
+      const wasLoading=CLOUD_LOADING;CLOUD_LOADING=true;
+      let n=0;ws.forEach(w=>{if(!attRec(w.id,UI.date)){setUpAtt(w.id,UI.date,{status:'present'});n++}});
+      CLOUD_LOADING=wasLoading;if(API_MODE&&n&&!wasLoading)save();
+      toast(n?n+' worker'+(n>1?'s':'')+' marked present':'Everyone is already marked');
+      render();break}
+    case 'quick-att':{
+      const cur=attRec(id,UI.date);
+      if(cur&&cur.status===v){DB.attendance=DB.attendance.filter(r=>r!==cur);save();toast('Attendance cleared')}
+      else{setUpAtt(id,UI.date,{status:v});toast('Attendance updated')}
+      render();break}
+    case 'open-att':openAttModal(id,el.dataset.d||UI.date);break;
+    case 'att-set':MCTX.status=v;
+      document.querySelectorAll('#modal-root [data-action="att-set"]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));break;
+    case 'att-save':
+      setUpAtt(MCTX.wid,MCTX.d,{status:MCTX.status,arrival:$('#f-ar').value,departure:$('#f-de').value,
+        ot:$('#f-ot').value,notes:$('#f-no').value.trim()});
+      closeModal();toast('Attendance updated');render();break;
+    case 'att-remove':
+      confirmModal({title:'Remove attendance record?',
+        message:'Remove the attendance record for <b>'+esc(byId('workers',MCTX.wid).name)+'</b> on '+fmtShort(MCTX.d)+'?',
+        confirmText:'Remove',
+        onConfirm(){DB.attendance=DB.attendance.filter(r=>!(r.workerId===MCTX.wid&&r.date===MCTX.d));
+          save();closeModal();toast('Attendance removed');render()}});break;
+
+    /* production */
+    case 'prod-save':{
+      const q=$('#pq-'+id).value,g=$('#pg-'+id).value;
+      if(q===''||+q<0){toast('Enter a quantity');break}
+      if(+q===0){toast('Enter a quantity greater than 0');break}
+      DB.production.push({id:uid(),date:UI.date,productId:id,quantity:+q,grade:g});
+      save();toast('Production saved');render();break}
+    case 'prod-remove':confirmModal({title:'Remove production entry?',message:'Are you sure you want to remove this saved production entry?',confirmText:'Remove',onConfirm(){DB.production=DB.production.filter(x=>x.id!==id);save();toast('Production entry removed');render()}});break;
+
+    /* inventory */
+    case 'stock-filter':UI.stockFilter=v;render();break;
+    case 'open-stock':openStockModal(id);break;
+    case 'stk-type':{MCTX.type=v;
+      document.querySelectorAll('#modal-root [data-action="stk-type"]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+      $('#stk-lbl').textContent=v==='add'?'Quantity to add':v==='remove'?'Quantity to remove':'Counted stock (set total)';break}
+    case 'stock-save':{
+      const val=$('#f-sq').value;
+      if(val===''||+val<0||(MCTX.type!=='adjust'&&+val===0)){toast('Enter a quantity');break}
+      DB.stock.push({id:uid(),date:UI.date,productId:MCTX.pid,type:MCTX.type,qty:+val,reason:$('#f-sr').value});
+      save();closeModal();toast('Stock updated');render();break}
+
+    /* sales / purchases */
+    case 'tx-filter':UI[TXN[k].filter]=v;render();break;
+    case 'tx-open':UI[TXN[k].sel]=id;render();window.scrollTo(0,0);break;
+    case 'tx-back':UI[TXN[k].sel]=null;render();break;
+    case 'tx-add':openTxnModal(k,el.dataset.cid,null);break;
+    case 'tx-edit':{const r=byId(k,id);openTxnModal(k,r[TXN[k].partyKey],id);break}
+    case 'tx-remove':
+      confirmModal({title:'Remove record?',message:'Remove this '+TXN[k].item.toLowerCase()+' record? This cannot be undone.',
+        confirmText:'Remove',
+        onConfirm(){DB[k]=DB[k].filter(x=>x.id!==id);save();toast('Record removed');render()}});break;
+    case 'tx-save':{
+      const C=TXN[k],pa=$('#f-pa').value,pr=$('#f-pr').value,q=+$('#f-q').value,rt=+$('#f-r').value,pd=+$('#f-pd').value;
+      if(!pa||!pr){toast('Select from the saved lists');break}
+      if(!(q>0)){toast('Enter a quantity');break}
+      if(id){Object.assign(byId(k,id),{[C.partyKey]:pa,productId:pr,qty:q,rate:rt,paid:pd})}
+      else DB[k].push({id:uid(),date:UI.date,[C.partyKey]:pa,productId:pr,qty:q,rate:rt,paid:pd});
+      save();closeModal();toast(C.item+' saved');render();break}
+
+    /* expenses */
+    case 'open-exp':openExpCat(id);break;
+    case 'exp-add':openExpenseModal(el.dataset.cid,null);break;
+    case 'exp-edit':{const r=byId('expenses',id);openExpenseModal(r.categoryId,id);break}
+    case 'exp-remove':
+      confirmModal({title:'Remove expense?',message:'Remove this expense record? This cannot be undone.',
+        confirmText:'Remove',
+        onConfirm(){DB.expenses=DB.expenses.filter(x=>x.id!==id);save();toast('Expense removed');render()}});break;
+    case 'exp-save':{
+      const cid=$('#f-c').value,amt=+$('#f-a').value;
+      if(!cid){toast('Select a category');break}
+      if(!(amt>0)){toast('Enter an amount');break}
+      if(id){Object.assign(byId('expenses',id),{categoryId:cid,amount:amt,note:$('#f-n').value.trim()})}
+      else DB.expenses.push({id:uid(),date:UI.date,categoryId:cid,amount:amt,note:$('#f-n').value.trim()});
+      save();closeModal();toast('Expense saved');render();break}
+
+    /* master data */
+    case 'master-tab':UI.mastersTab=v;render();break;
+    case 'master-add':openMasterModal(l,null);break;
+    case 'master-edit':openMasterModal(l,id);break;
+    case 'master-toggle':{const x=byId(l,id);x.active=!x.active;save();
+      toast(x.active?'Activated':'Deactivated — history preserved');render();break}
+    case 'master-delete':requestMasterDelete(l,id);break;
+    case 'master-save':{
+      const nm=$('#f-nm').value.trim();
+      if(!nm){toast('Name is required');break}
+      if(DB[l].some(x=>x.name.toLowerCase()===nm.toLowerCase()&&x.id!==id)){toast('This name already exists');break}
+      if(id){const x=byId(l,id);x.name=nm;
+        if(MASTER[l].prod){x.unit=$('#f-un').value.trim();x.minStock=$('#f-mn').value}}
+      else{const o={id:uid(),name:nm,active:true};
+        if(MASTER[l].prod){o.unit=$('#f-un').value.trim();o.minStock=$('#f-mn').value}
+        DB[l].push(o)}
+      save();closeModal();toast('Saved');render();break}
+
+    case 'reset-data':
+      confirmModal({title:'Reset all data?',
+        message:API_MODE?'This clears all shared lists and records on every device. This cannot be undone.':'This clears every list and record stored in this browser. This cannot be undone.',
+        confirmText:'Reset',
+        onConfirm(){
+          closeModal();
+          if(API_MODE){apiRequest('/api/state/reset',{method:'POST'}).then(async result=>{
+            CLOUD_REVISION=result.revision;applyCloudSnapshot(await apiRequest('/api/state'));render();toast('All data cleared');
+          }).catch(error=>toast(error.message));return}
+          DB=blank();save();SESSION=null;sessionStorage.removeItem(AUTH_KEY);toast('All data cleared');showAuth();
+        }});break;
+
+    /* modal plumbing */
+    case 'modal-close':closeModal();break;
+    case 'overlay-close':if(e.target===el)closeModal();break;
+    case 'confirm-cancel':closeModal();break;
+    case 'confirm-ok':{const cb=CBR;CBR=null;if(cb)cb();break}
+  }
+});
+
+/* search (live filter, no re-render → keeps focus) */
+document.addEventListener('input',e=>{
+  const el=e.target;if(!el.matches||!el.matches('[data-rows]'))return;
+  if(el.dataset.rows==='#att-body'){UI.attSearch=el.value;applyAtt();return}
+  const q=el.value.trim().toLowerCase(),c=document.querySelector(el.dataset.rows);
+  if(c)c.querySelectorAll('[data-name]').forEach(r=>{
+    r.style.display=r.dataset.name.toLowerCase().includes(q)?'':'none'});
+});
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='lang-select'){UI.language=e.target.value;localStorage.setItem(LS+'_language',UI.language);render()}
+});
+ $('#date-input').addEventListener('change',e=>{if(e.target.value){UI.date=e.target.value;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+ $('#brand-ic').innerHTML=I.box;
+ $('#hb').innerHTML=I.menu;
+
+if(API_MODE)initializeCloud();
+else{restoreSession();if(SESSION)render();else showAuth()}
+</script>
+</body>
+</html>
